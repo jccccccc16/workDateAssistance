@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>工作排表</title>
+</head>
+<body>
+<table>
+
+    <tr>
+        <th>日</th>
+        <th>一</th>
+        <th>二</th>
+        <th>三</th>
+        <th>四</th>
+        <th>五</th>
+        <th>六</th>
+    </tr>
+    <tr>
+        <div>
+            <td></td>
+        </div>
+    </tr>
+    <tr th:each="day:${workDate.workTypeMapper}">
+        <td></td>
+    </tr>
+</table>
+</body>
+</html>

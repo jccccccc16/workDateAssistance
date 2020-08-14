@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>工作排表助手</title>
+
+</head>
+<body>
+<br>
+<br>
+<table id="btnTable">
+    <tr>
+        <td>时间制度：
+            <select id="strategySelection">
+                <option name="test">选择工作制度</option>
+                <option name="0">两班制</option>
+                <option name="1">三班制</option>
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td>今天上什么班：
+            <select id="workTypeSelection">
+                <option name="test">选择今天上什么班</option>
+            </select>
+        </td>
+        <td><p id="msg"></p></td>
+    </tr>
+</table>
+<div id="btnDiv" hidden="hidden">
+<!--    <button id="lastMonthBtn">查看上一个月</button>  尚未完成-->
+    <button id="nextMonthBtn" >查看下一个月</button>
+</div>
+
+<br>
+<div id="dateDiv">
+</div>
+<table id="workDateTable" border="1">
+</table>
+<div id="showTablesDiv"></div>
+
+
+<script src="/asserts/js/jquery-3.4.1.js"></script>
+<script type="text/javascript">
+//     $("#strategySelection").bind("change",function () {
+//         var name = $(this).find("option:selected").attr("name");
+//         alert(name)
+//         $.ajax({
+//             url:"/getWorkTypeList/"+name,
+//             contentType:"application/json;charset=UTF-8",
+//             type:"get",
+//             success:function (data) {
+//                 console.log(data)
+//                var workTypeSelection =  $("#workTypeSelection");
+//                 for(var i=0;i<data.length;i++){
+//                     workTypeSelection.append("<option name="+i+">"+data[i]+"</option>")
+//                 }
+//
+//
+//             },
+//             error:function () {
+// alert("error")
+//             }
+//         })
+//
+//     })
+</script>
+
+<script type="text/javascript">
+    //-------------------------------------------------------------------------------------------
+    //全局变量
+    var workDateGlobal;
+    //-------------------------------------------------------------------------------------------
+    //填充工作周期
+    $("#strategySelection").bind("change",function () {
+        var name = $(this).find("option:selected").attr("name");
+        $.ajax({
+            url:"/getWorkTypeList/"+name,
+            contentType:"application/json;charset=UTF-8",
+            type:"get",
+            success:function (workTypeList) {
+                var workTypeSelection =  $("#workTypeSelection");
+                workTypeSelection.empty()
+                for(var i=0;i<workTypeList.length;i++){
+                    workTypeSelection.append("<option name="+i+">"+workTypeList[i]+"</option>")
+                }
+                var msgP=$("#msg");
+                msgP.empty();
+                msgP.append("（请选择上今天什么班）")
+
+            },
+            error:function () {
+                confirm("请不要选择此项")
+            }
+        })
+
+    })
+    //-------------------------------------------------------------------------------------------
+    //产生工作排表
+    $("#workTypeSelection").bind("change",function () {
+        var name = $(this).find("option:selected").attr("name");
+        $.ajax({
+            url:"/getWorkDate/"+name,
+            contentType:"application/json;charset=UTF-8",
+            type:"get",
+            success:function (workDate) {
+
+                showTable2(workDate)
+                $("#msg").clear();
+               //  var table = $("#workDateTable");
+               //  table.empty()
+               //  var newTh="    <tr>\n" +
+               //      "    <th>日</th>\n" +
+               //      "    <th>一</th>\n" +
+               //      "    <th>二</th>\n" +
+               //      "    <th>三</th>\n" +
+               //      "    <th>四</th>\n" +
+               //      "    <th>五</th>\n" +
+               //      "    <th>六</th>\n" +
+               //      "    </tr>";
+               //  table.append(newTh)
+               //  var newTr=$("<tr></tr>");
+               //  //填充第一行，填充空格和第一行的号数
+               //  for(var space=0;space<workDate.spaceNums;space++){
+               //      var newTd=$("<td></td>");
+               //      newTd.text(" ");
+               //      newTr.append(newTd);
+               //  }
+               //
+               //  //填充空格后半的号数
+               //  Boolean
+               //  f=true;
+               // for (var i=1;i<workDate.dayNums+1;i++){
+               //     var newTd=$("<td></td>");
+               //     var workType=workDate.workTypeMapper.workTypeMap[i];
+               //     newTd.text(i+""+workType);
+               //     newTr.append(newTd);
+               //     if(f&&i+workDate.spaceNums==7){
+               //         f=false;
+               //         table.append(newTr);
+               //         newTr=$("<tr></tr>");
+               //     }
+               //     if((i+workDate.firstDayOfWeek-1)%7==0){
+               //         table.append(newTr);
+               //         newTr=$("<tr></tr>");
+               //     }
+               //
+               // }
+               //
+               // //放开上一个月，下一个月的按钮
+               //  document.getElementById("btnDiv").removeAttribute("hidden");
+            },
+            error:function () {
+                confirm("请不要选择此项")
+            }
+        })
+
+    })
+    //-------------------------------------------------------------------------------------------
+    //显示下一个月
+    $("#nextMonthBtn").bind("click",function (){
+        var nextMonthNum = workDateGlobal.nextMonth;
+        $.ajax({
+            url:"/getNextMonth",
+            contentType:"application/json;charset=UTF-8",
+            type:"post",
+            data:JSON.stringify(workDateGlobal),
+            success:function (workDate) {
+                showTable2(workDate);
+                //document.getElementById("nextMonthBtn").setAttribute("disabled","disabled");
+               // var btnDiv=$("#btnDiv");
+                //var p="<p style='color: chartreuse'>"+"抱歉，暂时只能查看两个月的表"+"</p>";
+                //btnDiv.append(p);
+            },
+            error:function () {
+
+            }
+
+        })
+    })
+    //显示上一个月
+    $("#lastMonthBtn").bind("click",function (){
+        var lastMonthNum = workDateGlobal.lastMonth;
+        $.ajax({
+            url:"/getWorkDate/"+lastMonthNum,
+            contentType:"application/json;charset=UTF-8",
+            type:"get",
+            success:function (workDate) {
+                showTable2(workDate)
+            },
+            error:function () {
+
+            }
+
+        })
+    })
+
+
+
+    //-------------------------------------------------------------------------------------------
+    //显示table的方法
+    function showTable(workDate){
+
+
+        workDateGlobal = workDate;//给全局变量赋值
+        var table = $("#workDateTable");
+        table.empty()
+        var newTh="    <tr>\n" +
+            "    <th>日</th>\n" +
+            "    <th>一</th>\n" +
+            "    <th>二</th>\n" +
+            "    <th>三</th>\n" +
+            "    <th>四</th>\n" +
+            "    <th>五</th>\n" +
+            "    <th>六</th>\n" +
+            "    </tr>";
+        table.append(newTh)
+        var newTr=$("<tr></tr>");
+        //填充第一行，填充空格和第一行的号数
+        for(var space=0;space<workDate.spaceNums;space++){
+            var newTd=$("<td></td>");
+            newTd.text(" ");
+            newTr.append(newTd);
+        }
+
+        //填充空格后半的号数
+        Boolean
+        f=true;
+        for (var i=1;i<workDate.dayNums+1;i++){
+            var newTd=$("<td></td>");
+            var workType=workDate.workTypeMapper.workTypeMap[i];
+            newTd.text(i+""+workType);
+            newTr.append(newTd);
+            if(f&&i+workDate.spaceNums==7){
+                f=false;
+                table.append(newTr);
+                newTr=$("<tr></tr>");
+            }
+            if((i+workDate.firstDayOfWeek-1)%7==0){
+                table.append(newTr);
+                newTr=$("<tr></tr>");
+            }
+
+        }
+
+        //放开上一个月，下一个月的按钮
+        document.getElementById("btnDiv").removeAttribute("hidden");
+        var month = workDate.month+1;
+        $("#dateDiv").append("<p>"+workDate.year+"年"+month+"月"+"</p>")
+    }
+
+
+
+    //显示table的方法
+    function showTable2(workDate){
+        var table = $("<table border=\"1\">\n" +
+            "</table>");
+        workDateGlobal = workDate;//给全局变量赋值
+        table.empty()
+        var newTh="    <tr>\n" +
+            "    <th>日</th>\n" +
+            "    <th>一</th>\n" +
+            "    <th>二</th>\n" +
+            "    <th>三</th>\n" +
+            "    <th>四</th>\n" +
+            "    <th>五</th>\n" +
+            "    <th>六</th>\n" +
+            "    </tr>";
+        table.append(newTh)
+        var newTr=$("<tr></tr>");
+        //填充第一行，填充空格和第一行的号数
+        for(var space=0;space<workDate.spaceNums;space++){
+            var newTd=$("<td></td>");
+            newTd.text(" ");
+            newTr.append(newTd);
+        }
+
+        //填充空格后半的号数
+        Boolean
+        f=true;
+        for (var i=1;i<workDate.dayNums+1;i++){
+            var newTd=$("<td></td>");
+            var workType=workDate.workTypeMapper.workTypeMap[i];
+            newTd.text(i+""+workType);
+            newTr.append(newTd);
+            if(f&&i+workDate.spaceNums==7){
+                f=false;
+                table.append(newTr);
+                newTr=$("<tr></tr>");
+            }
+            if((i+workDate.firstDayOfWeek-1)%7==0){
+                table.append(newTr);
+                newTr=$("<tr></tr>");
+            }
+
+        }
+        table.append(newTr);
+        //放开上一个月，下一个月的按钮
+        document.getElementById("btnDiv").removeAttribute("hidden");
+        var month = workDate.month+1;
+
+        //填充p和table到div
+        var showTableDiv=$("#showTablesDiv");
+        var p=$("<p></p>");
+        p.text(workDate.year+"年"+month+"月");
+        showTableDiv.append(p);
+        showTableDiv.append(table);
+        showTableDiv.append("<br><br>");
+
+    }
+
+
+
+
+
+
+
+</script>
+
+</body>
+</html>
